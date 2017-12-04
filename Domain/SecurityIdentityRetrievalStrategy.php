@@ -17,7 +17,8 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Acl\Model\SecurityIdentityRetrievalStrategyInterface;
 use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
-
+use TimeTac\Exception\Http as HttpException;
+use TimeTac\ORM\Entity\User;
 /**
  * Strategy for retrieving security identities.
  *
@@ -56,8 +57,13 @@ class SecurityIdentityRetrievalStrategy implements SecurityIdentityRetrievalStra
             }
         }
 
+        $oService = \EntityService::getService(User::class);
+        $oUser = $oService->getRepository()->findByUsername($token->getUsername());
+        if((!isset($oUser[0])) || (!$oUser[0] instanceof User)) {
+            throw new HttpException\BadRequestException("User with the specified username not found");
+        }
         // add all reachable roles
-        foreach ($this->roleHierarchy->getReachableRoles($token->getRoles()) as $role) {
+        foreach ($this->roleHierarchy->getReachableRoles($oUser[0]->getRoles()) as $role) {
             $sids[] = new RoleSecurityIdentity($role);
         }
 
