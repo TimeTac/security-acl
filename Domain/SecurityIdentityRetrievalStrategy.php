@@ -57,8 +57,17 @@ class SecurityIdentityRetrievalStrategy implements SecurityIdentityRetrievalStra
             }
         }
 
-        $oService = \EntityService::getService(User::class);
-        $oUser = $oService->getRepository()->findByUsername($token->getUsername());
+        if(class_exists("\\EntityService")) {
+            $oRepository = \EntityManager::getRepository(User::class);
+        }
+        else if(class_exists("\\EntityManager")) {
+            $oRepository = \EntityManager::getRepository(User::class);
+        }
+        else if(class_exists("\\TimeTac\\Core\\Db\\EntityManager")) {
+            $oRepository = \TimeTac\Core\Db\EntityManager::getRepository(User::class);
+        }
+        $oUser = $oRepository->findByUsername($token->getUsername());
+
         if((!isset($oUser[0])) || (!$oUser[0] instanceof User)) {
             throw new HttpException\BadRequestException("User with the specified username not found");
         }
